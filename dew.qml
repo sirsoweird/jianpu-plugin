@@ -131,90 +131,46 @@ MuseScore {
 				
                                     for (var i = (notes.length - 1); i < notes.length; i++) { // var i = 0 , changed so only 'iterates' through top note in chord
                                           var note = notes[i];
-                                          console.log("notes[i] " + i)					  
+                                          //console.log("notes[i] " + i)					  
                                           func(note, cursor.keySignature);
 
 					  if (voice==0) 
 					  {
 					        // do jianpu
-						var text = newElement(Element.STAFF_TEXT);
-                                                var yOff = -1; // .pos.y OFFSET. This should be set in a dialog, upon running the plugin
+//=============================================================================
+//            POSITIONING VARIABLES -- NEED TO MOVE TO OPENING DIALOG
+//=============================================================================
+						var yOff = -1; // .pos.y OFFSET. This should be set in a dialog, upon running the plugin
                                                 var underlineSpacing = 0.5; // This should also be set in opening dialog.  Spacing between stacked underlines. Positive
-                                                text.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
-                                                      subsequent note in the chord, this should be nonfunctional if we're 
-                                                      only doing the top note per chord.  */
-						text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
-						
+                                                
+//=============================================================================
+//                             DETERMINE JIANPU NUMBER
+//=============================================================================
                                                 var tpcNames = "FCGDAEB";
                                                 var name = tpcNames[(note.tpc + 1) % 7]; // name is the ABC for the NOTE we are on
                                                 //console.log("cursor.keySignature " + cursor.keySignature)
-                                                console.log("note.pitch " + note.pitch);
-                                                console.log("scaleTwelve[cursor.keySignature+7] =" + scaleTwelve[cursor.keySignature+7]);
+                                                //console.log("note.pitch " + note.pitch);
+                                                //console.log("scaleTwelve[cursor.keySignature+7] =" + scaleTwelve[cursor.keySignature+7]);
                                                 var names = "CDEFGAB";
                                                 var octave = Math.floor(((note.pitch - scaleTwelve[cursor.keySignature+7]) - 60) / 12 ) // 60 is our magic number at MIDDLE C
                                                       // the first DO at or above MIDDLE C will be the 'no dot DO'
                                                       // octave is 0 when no dots, positive: number of dots above, negative: number of dots below.
 						var scale = scales[cursor.keySignature+7]; //scale is the ABC of our current key signature
 						var jpText = ""+((names.indexOf(name) - names.indexOf(scale) +28)%7+1);// this is the JIANPU NUMBER for further use below
-                                                text.text = jpText;
+                                                
+//=============================================================================
+//                              MAIN JIANPU DRAWING
+//=============================================================================
+                                                var text = newElement(Element.STAFF_TEXT);
+                                                text.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
+                                                      subsequent note in the chord, this should be nonfunctional if we're 
+                                                      only doing the top note per chord.  */
+						text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
+						text.text = jpText;
                                                 //console.log("note.tied = "  + note.tied); 
                                                 //console.log("note.tieBack = " + note.tieBack);
                                                 //console.log("note.tieFor = " + note.tieFor);                                                
-						if (!!cursor.element.beam) {
-                                                      
-                                                      console.log("cursor.element.beam.pagePos.x.toPrecision(6) " + cursor.element.beam.pagePos.x.toPrecision(6))
-                                                      console.log("cursor.element.pagePos.x " + cursor.element.pagePos.x)
-                                                      //console.log("cursor.element.pos " + cursor.element.pos)
-                                                      //console.log("cursor.segment.tick " + cursor.segment.tick)
-                                                      console.log("cursor.element.beam.bbox " + cursor.element.beam.bbox)
-                                                      if (lastBeam == cursor.element.beam) {
-                                                            // current beam is same as previous beam, so draw back one segment of jianpu beam
-                                                            //draw beam on jianpu
-                                                            console.log("beam on current note, same beam as a previous note. Drawing beam back to previous note...")
-                                                            var beamLength = cursor.element.pagePos.x - lastBeamX; //cursor.element.beam.bbox.width;
-                                                            //console.log("beamLength " + beamLength)
-                                                            var jpbeamLength = (beamLength * 2).toFixed(0);//.toFixed(0) + 0;
-						            var oneSpace = "                                              ";
-                                                            var moreSpaces = oneSpace.substring(1, jpbeamLength);
-                                                            //console.log("moreSpaces :" + moreSpaces + ": jpbeamLength = " + jpbeamLength);
-                                                            
-                                                            
-                                                            var textBeam = newElement(Element.STAFF_TEXT);
-                                                            textBeam.pos.x = -beamLength ;
-						            textBeam.pos.y = yOff + 0.0; // this is the position above the line
-                                                            textBeam.text="<u>" + moreSpaces + "</u>" //+ (cursor.element.beam.bbox.width.toFixed(0)); // not sure how accurage bbox is, but if we can extract the width from it, we can get a good idea how wide to make the Jianpu beam.
-						            cursor.add(textBeam);
-						            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 240) { //both ends of beam are shorter than eighth, i.e. at least SIXTEENTH, so at least a double-beam
-                                                                  var textBeam2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-beam. 
-                                                                  textBeam2.pos.x = -beamLength; 
-                                                                  textBeam2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
-                                                                  textBeam2.text="<u>" + moreSpaces + "</u>";
-                                                                  cursor.add(textBeam2);
-						            }
-                                                            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 120) { //both ends of beam are shorter than sixteenth, i.e. at least THIRTYSECOND, so at least a triple-beam
-                                                                  var textBeam3 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-beam. 
-                                                                  textBeam3.pos.x = -beamLength; 
-                                                                  textBeam3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lower)
-                                                                  textBeam3.text="<u>" + moreSpaces + "</u>";
-                                                                  cursor.add(textBeam3);
-						            }
-                                                            
-                                                            lastBeamX = cursor.element.pagePos.x; // on beams of over 2 notes, draw each
-                                                            // segment individually; this way sixteenths and 32nds can be handled also
-                                                            // Therefore we update the drawback X position each time we draw
-                                                            lastBeamTicks = cursor.element.duration.ticks; //same with ticks
-                                                      }
-                                                      else { 
-                                                      // this means we are starting a new beam. Probably have to draw it later, just get info first.
-                                                            console.log("beam on current note, left end of beam. Storing information for next beam instance")
-                                                            lastBeam = cursor.element.beam
-                                                            lastBeamX = cursor.element.pagePos.x
-                                                            lastBeamTicks = cursor.element.duration.ticks
-                                                      }
-                                                }
-                                                console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
-                                                
-
+						console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
                                                 //(cursor.element.duration.ticks) = note_length (1920=whole; 960=half; 480=quarter; 240=eighth; 120=sixtenth;)
 						if (cursor.element.duration.ticks==1920) // WHOLE
 						{
@@ -248,44 +204,16 @@ MuseScore {
 						      text.text="<u> "+jpText+" </u>"; // eighth
 						      text.pos.x = -0.5 
                                                       text.pos.y = yOff
-                                                      //console.log("!!cursor.element.beam " + !!cursor.element.beam) // true when beam is present, but doesnt specify which way
-						      /*if (!!cursor.element.beam) {
-                                                            console.log("cursor.element.beam.pagePos " + cursor.element.beam.pagePos)
-                                                            console.log("cursor.element.beam.pos " + cursor.element.beam.pos)
-                                                            console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
-                                                      }*/
-                                                      // check to see if NEXT note is an eighth but NOT currently TIEing
-                                                      if (eighthTie == 0)
-						      {
-						            //eighthTie = 1; // save off the X position //REMOVE EIGHTH TIES for debuggin 2017-12-20
-						      }
-						      else
-						      {
-						            var text2 = newElement(Element.STAFF_TEXT);
-                                                            text2.pos.x = 0; //(-2.5 * (graceChords.length - (i-1)))+.5;
-						            text2.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
-							    text2.text="<u>_____</u>"; // trying 5 underscores seems ok 2017-11-17
-					                    cursor.add(text2);
-							    eighthTie = 0;
-						      }
-						}
+                                                }
 						else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180) // SIXTEENTH or DOTTED SIXTEENTH
 						{      
-						            
-                                                      
-                                                      text.text="<u> "+jpText+" </u>"; // sixteenth
+						      text.text="<u> "+jpText+" </u>"; // sixteenth
 						      text.pos.x = -0.5 // * (graceChords.length - i);
 						      var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                                       text2.pos.x = -0.5; //-2.5 * (graceChords.length - i);
 						      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
-      						      text2.text="<u>    </u>";
+      						      text2.text="<u>    </u>"; // four spaces
 						      cursor.add(text2);
-						      //var text3 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 2017-12-20 seems this and 4 lines below is irrelevant?
-                                                      //text3.pos.x = -0.5; //-2.5 * (graceChords.length - i);
-						      //text3.pos.y = yOff + 0.0; // this is the position above the line for the jianpu underline
-						      //text3.text="<u>__</u>";
-						      //cursor.add(text3);
-						      eighthTie = 0;
 						}
                                                 else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90) // THIRTYSECONDTH or DOTTED THIRTYSECONDTH
 						{      
@@ -303,19 +231,82 @@ MuseScore {
 						      cursor.add(text3);
 						      eighthTie = 0;
 						}
-                                                
-                                                // should this line below be 'if' instead of 'else if' ? Changed 2017-12-20
+//=============================================================================
+//                                DOTTED NOTES
+//=============================================================================
                                                 // alternatively, there is a property somewhere called note.dotCount which could be helpful
-						if ((cursor.element.duration.ticks==720) || (cursor.element.duration.ticks==360) || (cursor.element.duration.ticks==180)) 
-                                                { // DOTTED QUARTER, or SIXTEENTH, add dot only
-                                                      text.text+="<font size=\"7\"/> •</font>"; // dotted quarter, eighth OR sixteenth, in a smaller font
-	       					      // eighthTie = 0; // 2017-11-17 13:40 rji, don't think this is necessary, shouldn't
-                                                      // end eighthTie just because a note is dotted
-						}
+						if (cursor.element.duration.ticks==720) // dotted QUARTER, since it has no underline, needs an extra space to line up with the eighths and shorter
+                                                { // DOTTED QUARTER, add dot only
+                                                      text.text+=" <font size=\"7\"/>•</font>"; // dotted quarter in a smaller font
+	       					}
+                                                if (cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180) // could also add dotted 32ndths, however that's beyond the scope of this project
+                                                { // DOTTED EIGHTH or SIXTEENTH, add dot only
+                                                      text.text+="<font size=\"7\"/>•</font>"; // dotted eighth OR sixteenth, in a smaller font
+	       					}
 
 						cursor.add(text);
-						
-                                                // SHARPS and FLATS
+
+//=============================================================================
+//                           BEAMS (JIANPU UNDERLINE)
+//=============================================================================
+// this doesn't beam rests; rest to rest beaming shouldn't exist, but eighth note to eighth rest should be able to beam somehow...
+                                                if (!!cursor.element.beam) { // current note contains a beam
+                                                      
+                                                      //console.log("cursor.element.beam.pagePos.x.toPrecision(6) " + cursor.element.beam.pagePos.x.toPrecision(6)) // useless
+                                                      console.log("cursor.element.pagePos.x " + cursor.element.pagePos.x)
+                                                      //console.log("cursor.element.pos " + cursor.element.pos)
+                                                      //console.log("cursor.segment.tick " + cursor.segment.tick)
+                                                      //console.log("cursor.element.beam.bbox " + cursor.element.beam.bbox) // not very accurate, therefore not useful
+                                                      if (lastBeam == cursor.element.beam) {
+                                                            // current beam is same as previous beam, so draw back one segment of jianpu beam
+                                                            // draw beam on jianpu
+                                                            console.log("beam on current note, same beam as a previous note. Drawing beam back to previous note...")
+                                                            var beamLength = cursor.element.pagePos.x - lastBeamX; //cursor.element.beam.bbox.width;
+                                                            //console.log("beamLength " + beamLength)
+                                                            var jpbeamLength = (beamLength * 2).toFixed(0);
+						            // this seems messy 
+                                                            var oneSpace = "                                              ";
+                                                            var moreSpaces = oneSpace.substring(1, jpbeamLength); 
+                                                            // if only we could use .repeat() in this code...
+                                                            //console.log("moreSpaces :" + moreSpaces + ": jpbeamLength = " + jpbeamLength);
+                                                            
+                                                            var textBeam = newElement(Element.STAFF_TEXT);
+                                                            textBeam.pos.x = -beamLength ; // start drawing to the left of the current note by the length of the beam
+						            textBeam.pos.y = yOff + 0.0; // this is the position above the line
+                                                            textBeam.text="<u>" + moreSpaces + "</u>"; 
+						            cursor.add(textBeam);
+						            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 240) { //both ends of beam are shorter than eighth, i.e. at least SIXTEENTH, so at least a double-beam
+                                                                  var textBeam2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-beam. 
+                                                                  textBeam2.pos.x = -beamLength; 
+                                                                  textBeam2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
+                                                                  textBeam2.text="<u>" + moreSpaces + "</u>";
+                                                                  cursor.add(textBeam2);
+						            }
+                                                            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 120) { //both ends of beam are shorter than sixteenth, i.e. at least THIRTYSECOND, so at least a triple-beam
+                                                                  var textBeam3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-beam. 
+                                                                  textBeam3.pos.x = -beamLength; 
+                                                                  textBeam3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
+                                                                  textBeam3.text="<u>" + moreSpaces + "</u>";
+                                                                  cursor.add(textBeam3);
+						            }
+                                                            
+                                                            lastBeamX = cursor.element.pagePos.x; // on beams of over 2 notes, draw each
+                                                            // segment individually; this way sixteenths and 32nds can be handled also
+                                                            // Therefore we update the drawback X position each time we draw
+                                                            lastBeamTicks = cursor.element.duration.ticks; //same with ticks, so we can compare lengths next time, determine number of underlines 
+                                                      }
+                                                      else { 
+                                                      // this means we are starting a new beam. Probably have to draw it later, just get info first.
+                                                            console.log("beam on current note, left end of beam. Storing information for later")
+                                                            lastBeam = cursor.element.beam
+                                                            lastBeamX = cursor.element.pagePos.x
+                                                            lastBeamTicks = cursor.element.duration.ticks
+                                                      }
+                                                }
+
+//=============================================================================
+//                                  SHARPS and FLATS
+//=============================================================================
                                                 var noteKey = (note.pitch - scaleTwelve[cursor.keySignature+7]) % 12;
                                                 var isSharp = false
                                                 var isFlat = false
@@ -379,10 +370,13 @@ MuseScore {
                                                 }
                                                 
                                                 
+//=============================================================================
+//                         UPPER and LOWER OCTAVE DOTS
+//=============================================================================
                                                 // check if needs DOWN octave dot
 						if (octave<0) { // could add ability for double dots below, however outside our current needs
 						      var text = newElement(Element.STAFF_TEXT);
-                                                      text.pos.x = 0.15; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
+                                                      text.pos.x = 0.2; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
 				              	      text.pos.y =  yOff + 1.25; // this is the position above the line for the jianpu UNDER DOT
 						      if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
 						      {
@@ -396,19 +390,25 @@ MuseScore {
 						      {
 					                    text.pos.y =  yOff + (underlineSpacing * 2) + 1.6; // the underdot for 32ndths is lower yet
 						      }
-                                                      text.text = "•";
+                                                      text.text = "<font size=\"7\"/>•</font>";
 						      cursor.add(text);
                                                 }
+                                                // check if needs UP octave dot
 						if (octave>0) { // likewise could add ability for double dots above, however also outside our current needs
 						      var text = newElement(Element.STAFF_TEXT);
                                                       text.pos.x = 0.15; // DOT needs a slight right
 				              	      text.pos.y =  yOff + -1.3; // this is the position above the line for the jianpu OVER DOT
-						      text.text = "•";
+						      text.text = "<font size=\"7\"/>•</font>";
                                                       cursor.add(text);
 						}
+                                                console.log(cursor.element.BarLine)
 					  }
                                     }
                               }
+
+//=============================================================================
+//                                  RESTS
+//=============================================================================
                               else if (voice==0) /*if (cursor.element.type == Element.CHORDREST)*/
                               {
                                     console.log("Rest");
@@ -428,28 +428,25 @@ MuseScore {
 				          var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
 					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"4\"/>—</font>"; // half
+					  text2.text="<font size=\"7\"/>—</font>"; // half
 					  cursor.add(text2);
-					  eighthTie = 0;
-				    }
+                                    }
 				    else if (cursor.element.duration.ticks==1440)
 				    {
 					  var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
 					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"4\"/>—   —</font>"; // dotted half
+					  text2.text="<font size=\"7\"/>—   —</font>"; // dotted half
 					  cursor.add(text2);
-					  eighthTie = 0;
-			            }
+                                    }
 				    else if (cursor.element.duration.ticks==1920)
 				    {
 					  var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
 					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"4\"/>—   —   —</font>"; // whole
+					  text2.text="<font size=\"7\"/>—   —   —</font>"; // whole
 					  cursor.add(text2);
-					  eighthTie = 0;
-				    }
+                                    }
 				    else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
 				    {
 					  text.text="<u> 0 </u>"; // eighth
@@ -462,15 +459,42 @@ MuseScore {
                                           text.pos.y = yOff
 				          var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                           text2.pos.x = -0.5; //-2.5 * (graceChords.length - i);
-				          text2.pos.y = yOff + 0.55; // this is the position above the line for the jianpu underline (lowest)
+				          text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
       					  text2.text="<u>    </u>";
 					  cursor.add(text2);
                                           eighthTie = 0;
 				    }
-			      }     
+			      }
+                              if (cursor.element.type == Element.BAR_LINE) {
+                                   console.log("BARLINE")
+                              }
+                              if (!!cursor.element.barline) {
+                                   console.log("BARLINE TOO")
+                              }
+
                               cursor.next();		  
                         }
                   }
+            }
+
+//=============================================================================
+//                         testing for barline entry
+//=============================================================================
+            var cursor2 = curScore.newCursor()
+            cursor2.rewind(0) // if no selection, beginning of score
+            var m = cursor2.measure
+            while (m ) { //&& (fullScore || cursor2.tick < endTick)
+                  console.log(m)
+                  console.log(cursor2.tick)
+                  console.log("m.pos.x " + m.pos.x) // success, but how to use...
+                  console.log("cursor2.measure.parent.type " + cursor2.barline.parent.type)
+                  var textBar = newElement(Element.STAFF_TEXT);
+                  textBar.pos.x = -2.5;
+                  textBar.pos.y =  yOff - 0.8;
+                  textBar.text="<font size=\"20\"/>|</font>"; 
+                  cursor2.add(textBar);
+                  cursor2.nextMeasure();
+                  m = cursor2.measure;
             }
       }
 
