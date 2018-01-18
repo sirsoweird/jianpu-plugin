@@ -176,8 +176,8 @@ MuseScore {
 						{
 						      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y = yOff + 0.5; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—   —   —</font>"; // whole. Font size 4 is too small.  Trying 7 2018-01-16
+						      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
+						      text2.text="<font size=\"7\"/>—   —   —"; //</font> whole. Font size 4 is too small.  Trying 7 2018-01-16
 						      cursor.add(text2);
 						      eighthTie = 0;
 						}
@@ -185,8 +185,8 @@ MuseScore {
 						{
 						      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—   —</font>"; // dotted half
+						      text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+						      text2.text="<font size=\"7\"/>—   —"; //</font> dotted half
 						      cursor.add(text2);
 						      eighthTie = 0;
 						}
@@ -194,8 +194,8 @@ MuseScore {
 						{
 						      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y = yOff + 0.5; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—</font>"; // half
+						      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
+						      text2.text="<font size=\"7\"/>—"; //</font> half
 						      cursor.add(text2);
 						      eighthTie = 0;
 						}
@@ -237,11 +237,12 @@ MuseScore {
                                                 // alternatively, there is a property somewhere called note.dotCount which could be helpful
 						if (cursor.element.duration.ticks==720) // dotted QUARTER, since it has no underline, needs an extra space to line up with the eighths and shorter
                                                 { // DOTTED QUARTER, add dot only
-                                                      text.text+=" <font size=\"7\"/>•</font>"; // dotted quarter in a smaller font
+                                                      text.text+=" <font size=\"7\"/>•"; //</font> dotted quarter in a smaller font
+                                                      // 2018-01-18 0939 removing "</font>" from end of text, seems to break when saved.
 	       					}
                                                 if (cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180) // could also add dotted 32ndths, however that's beyond the scope of this project
                                                 { // DOTTED EIGHTH or SIXTEENTH, add dot only
-                                                      text.text+="<font size=\"7\"/>•</font>"; // dotted eighth OR sixteenth, in a smaller font
+                                                      text.text+="<font size=\"7\"/>•"; // </font>dotted eighth OR sixteenth, in a smaller font
 	       					}
 
 						cursor.add(text);
@@ -390,7 +391,7 @@ MuseScore {
 						      {
 					                    text.pos.y =  yOff + (underlineSpacing * 2) + 1.6; // the underdot for 32ndths is lower yet
 						      }
-                                                      text.text = "<font size=\"7\"/>•</font>";
+                                                      text.text = "<font size=\"7\"/>•";
 						      cursor.add(text);
                                                 }
                                                 // check if needs UP octave dot
@@ -398,7 +399,7 @@ MuseScore {
 						      var text = newElement(Element.STAFF_TEXT);
                                                       text.pos.x = 0.15; // DOT needs a slight right
 				              	      text.pos.y =  yOff + -1.3; // this is the position above the line for the jianpu OVER DOT
-						      text.text = "<font size=\"7\"/>•</font>";
+						      text.text = "<font size=\"7\"/>•";//</font>
                                                       cursor.add(text);
 						}
                                                 console.log(cursor.element.BarLine)
@@ -427,24 +428,24 @@ MuseScore {
 				    {
 				          var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—</font>"; // half
+					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+					  text2.text="<font size=\"7\"/>—"; // half</font>
 					  cursor.add(text2);
                                     }
 				    else if (cursor.element.duration.ticks==1440)
 				    {
 					  var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—   —</font>"; // dotted half
+					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+					  text2.text="<font size=\"7\"/>—   —"; // dotted half</font>
 					  cursor.add(text2);
                                     }
 				    else if (cursor.element.duration.ticks==1920)
 				    {
 					  var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.5; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—   —   —</font>"; // whole
+					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+					  text2.text="<font size=\"7\"/>—   —   —"; // whole</font>
 					  cursor.add(text2);
                                     }
 				    else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
@@ -487,11 +488,11 @@ MuseScore {
                   console.log(m)
                   console.log(cursor2.tick)
                   console.log("m.pos.x " + m.pos.x) // success, but how to use...
-                  console.log("cursor2.measure.parent.type " + cursor2.barline.parent.type)
+                  console.log("cursor2.measure.parent.type " + cursor2.element.parent.type)
                   var textBar = newElement(Element.STAFF_TEXT);
                   textBar.pos.x = -2.5;
                   textBar.pos.y =  yOff - 0.8;
-                  textBar.text="<font size=\"20\"/>|</font>"; 
+                  textBar.text="<font size=\"20\"/>|"; // </font>
                   cursor2.add(textBar);
                   cursor2.nextMeasure();
                   m = cursor2.measure;
