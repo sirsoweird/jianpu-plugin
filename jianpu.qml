@@ -11,41 +11,68 @@ import MuseScore 1.0
 
 MuseScore {
       version:  "1.0"
-      description: "Change notehead according to pitch. Sacred harp, shape notes, Aikin."
-      menuPath: "Plugins.Notes.Shapes Notes"
+      description: "Add JianPu numbering."
+      menuPath: "Plugins.JianPu"
       pluginType: "dialog"
 
       id: window
-      width: 220
-      height: 130
-      ExclusiveGroup { id: exclusiveGroup }
-      ColumnLayout {
-        id: column
-        anchors.margins : 10
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 60
-        CheckBox {
-          id: shape7CheckBox
-          text: "7 shape notes (w/jianpu)"
-          checked: true
-          exclusiveGroup: exclusiveGroup
-        }
-        CheckBox {
-          id: shape4CheckBox
-          text: "4 shape notes"
-          exclusiveGroup: exclusiveGroup
-        }
-        CheckBox {
-          id: normalCheckBox
-          text: "Normal notes"
-          exclusiveGroup: exclusiveGroup
-        }
+      width: 240
+      height: 150
+      GridLayout {
+            id: grid
+            columns: 2
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins : 10
+            Text {
+                  text: "JianPu position:"
+            }
+            SpinBox {
+                  id: yOffSpinBox
+                  Layout.minimumWidth: 60
+                  Layout.minimumHeight: 20
+                  decimals: 1
+                  stepSize: 0.1
+                  maximumValue: 3.0
+                  minimumValue: -1.0
+                  value: 1.0
+            }
+            Text {
+                  text: "Underline spacing:"
+            }
+            SpinBox {
+                  id: underlineSpacingSpinBox
+                  Layout.minimumWidth: 60
+                  Layout.minimumHeight: 20
+                  decimals: 2
+                  stepSize: 0.05
+                  maximumValue: 1.0
+                  minimumValue: 0.1
+                  value: 0.5
+            }
+            Text {
+                  text: "Underdot position:"
+            }
+            SpinBox {
+                  id: underdotPositionSpinBox
+                  Layout.minimumWidth: 60
+                  Layout.minimumHeight: 20
+                  decimals: 2
+                  stepSize: 0.05
+                  maximumValue: 0.0
+                  minimumValue: -2.0
+                  value: -1.25
+            }
+            CheckBox {
+                  id: shapeCheckBox
+                  text: "Shape notes also?"
+                  checked: false
+            }
       }
       RowLayout {
             anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: column.bottom
+            anchors.top: grid.bottom
             height: 70
             Button {
               id: okButton
@@ -61,7 +88,7 @@ MuseScore {
               onClicked: { Qt.quit() }
             }
 
-        }
+      }
 
 
       //                              -7   -6   -5   -4   -3   -2   -1    0    1    2    3    4    5    6    7
@@ -82,7 +109,7 @@ MuseScore {
             if (!cursor.segment) { // no selection
                   fullScore = true;
                   startStaff = 0; // start with 1st staff and end with last
-                  endStaff = 0; // curScore.nstaves - 1; change to 0 to only work on first staff rji
+                  endStaff = 0; // curScore.nstaves - 1; //first staff only 
             } else {
                   startStaff = cursor.staffIdx;
                   cursor.rewind(2);
@@ -104,9 +131,11 @@ MuseScore {
                         cursor.voice = voice; //voice has to be set after goTo
                         cursor.staffIdx = staff;
                         var eighthTie =  0;
-                        var lastBeam = 0;
-                        var lastBeamX = 0;
+                        var lastBeam = 0;      // identifier of start of beam 
+                        var lastBeamX = 0;     // pos.x value of start of beam 
                         var lastBeamTicks = 0;
+                        var yOff = -yOffSpinBox.value; // .pos.y OFFSET. Positive is lower, negative is higher; so we negative the spinbox to get the correct value 
+                        var underlineSpacing = underlineSpacingSpinBox.value; //Spacing between stacked underlines. Positive
                         if (fullScore)
                               cursor.rewind(0) // if no selection, beginning of score
 
@@ -126,18 +155,14 @@ MuseScore {
                                     for (var i = (notes.length - 1); i < notes.length; i++) { // var i = 0 , changed so only 'iterates' through top note in chord
                                           var note = notes[i];
                                           //console.log("notes[i] " + i)					  
-                                          func(note, cursor.keySignature);
+                                          if (shapeCheckBox.checked) { 
+                                                func(note, cursor.keySignature);
+                                          }
 
-					  if (voice==0) 
-					  {
-					        // do jianpu
-//=============================================================================
-//            POSITIONING VARIABLES -- NEED TO MOVE TO OPENING DIALOG
-//=============================================================================
-						var yOff = -1; // .pos.y OFFSET. This should be set in a dialog, upon running the plugin
-                                                var underlineSpacing = 0.5; // This should also be set in opening dialog.  Spacing between stacked underlines. Positive
-                                                
-                                                
+                                          if (voice==0) 
+                                          {
+                                                // do jianpu
+
 //=============================================================================
 //                             DETERMINE JIANPU NUMBER
 //=============================================================================
@@ -148,10 +173,10 @@ MuseScore {
                                                 //console.log("scaleTwelve[cursor.keySignature+7] =" + scaleTwelve[cursor.keySignature+7]);
                                                 var names = "CDEFGAB";
                                                 var octave = Math.floor(((note.pitch - scaleTwelve[cursor.keySignature+7]) - 60) / 12 ) // 60 is our magic number at MIDDLE C
-                                                      // the first DO at or above MIDDLE C will be the 'no dot DO'
-                                                      // octave is 0 when no dots, positive: number of dots above, negative: number of dots below.
-						var scale = scales[cursor.keySignature+7]; //scale is the ABC of our current key signature
-						var jpText = ""+((names.indexOf(name) - names.indexOf(scale) +28)%7+1);// this is the JIANPU NUMBER for further use below
+                                                // the first DO at or above MIDDLE C will be the 'no dot DO'
+                                                // octave is 0 when no dots, positive: number of dots above, negative: number of dots below.
+                                                var scale = scales[cursor.keySignature+7]; //scale is the ABC of our current key signature
+                                                var jpText = ""+((names.indexOf(name) - names.indexOf(scale) +28)%7+1);// this is the JIANPU NUMBER for further use below
                                                 
 //=============================================================================
 //                              MAIN JIANPU DRAWING
@@ -160,96 +185,84 @@ MuseScore {
                                                 text.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
                                                       subsequent note in the chord, this should be nonfunctional if we're 
                                                       only doing the top note per chord.  */
-						text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
-						text.text = jpText;
-                                                //console.log("note.tied = "  + note.tied); 
-                                                //console.log("note.tieBack = " + note.tieBack);
-                                                //console.log("note.tieFor = " + note.tieFor);                                                
-						console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
-                                                //(cursor.element.duration.ticks) = note_length (1920=whole; 960=half; 480=quarter; 240=eighth; 120=sixtenth;)
+                                                text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
+                                                text.text = jpText;
+                                                console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
                                                 
-						//var newLine = newElement(Element.TEXTLINE)
-						//console.log(newLine.pos)
-						//cursor.add(newLine)
-						if (cursor.element.duration.ticks==1920) // WHOLE
-						{
-						      var text2 = newElement(Element.STAFF_TEXT);
+                                                if (cursor.element.duration.ticks==1920) // WHOLE
+                                                {
+                                                      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—   —   —"; //</font> whole. Font size 4 is too small.  Trying 7 2018-01-16
-						      cursor.add(text2);
-						      eighthTie = 0;
-						}
-						else if (cursor.element.duration.ticks==1440) // DOTTED HALF
-						{
-						      var text2 = newElement(Element.STAFF_TEXT);
+                                                      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
+                                                      text2.text="<font size=\"7\"/>—   —   —"; //</font> whole. Font size 4 is too small.  Trying 7 2018-01-16
+                                                      cursor.add(text2);
+                                                      eighthTie = 0;
+                                                }
+                                                else if (cursor.element.duration.ticks==1440) // DOTTED HALF
+                                                {
+                                                      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—   —"; //</font> dotted half
-						      cursor.add(text2);
-						      eighthTie = 0;
-						}
+                                                      text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+                                                      text2.text="<font size=\"7\"/>—   —"; //</font> dotted half
+                                                      cursor.add(text2);
+                                                }
                                                 else if (cursor.element.duration.ticks==960) // HALF
-						{
-						      var text2 = newElement(Element.STAFF_TEXT);
+                                                {
+                                                      var text2 = newElement(Element.STAFF_TEXT);
                                                       text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
-						      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
-						      text2.text="<font size=\"7\"/>—"; //</font> half
-						      cursor.add(text2);
-						      eighthTie = 0;
-						}
-						else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360) // EIGHTH or DOTTED EIGHTH
-						{
-						      text.text="<u> "+jpText+" </u>"; // eighth
-						      text.pos.x = -0.5 
+                                                      text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
+                                                      text2.text="<font size=\"7\"/>—"; //</font> half
+                                                      cursor.add(text2);
+                                                }
+                                                else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360) // EIGHTH or DOTTED EIGHTH
+                                                {
+                                                      text.text="<u> "+jpText+" </u>"; // eighth
+                                                      text.pos.x = -0.5 
                                                       text.pos.y = yOff
                                                 }
-						else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180) // SIXTEENTH or DOTTED SIXTEENTH
-						{      
-						      text.text="<u> "+jpText+" </u>"; // sixteenth
-						      text.pos.x = -0.5 // * (graceChords.length - i);
-						      var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
+                                                else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180) // SIXTEENTH or DOTTED SIXTEENTH
+                                                {      
+                                                text.text="<u> "+jpText+" </u>"; // sixteenth
+                                                      text.pos.x = -0.5 // * (graceChords.length - i);
+                                                      var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                                       text2.pos.x = -0.5; //-2.5 * (graceChords.length - i);
-						      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
-      						      text2.text="<u>​    </u>"; // no-width space "​" plus four spaces
-						      cursor.add(text2);
-						}
+                                                      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
+                                                      text2.text="<u>​    </u>"; // no-width space "​" plus four spaces
+                                                      cursor.add(text2);
+                                                }
                                                 else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90) // THIRTYSECONDTH or DOTTED THIRTYSECONDTH
-						{      
-						      text.text="<u> "+jpText+" </u>"; 
-						      text.pos.x = -0.5 ;
-						      var text2 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
+                                                {      
+                                                      text.text="<u> "+jpText+" </u>"; 
+                                                      text.pos.x = -0.5 ;
+                                                      var text2 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
                                                       text2.pos.x = -0.5;
-						      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (middle)
-      						      text2.text="<u>​    </u>"; // no-width space "​" plus four spaces
-						      cursor.add(text2);
-						      var text3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline.
+                                                      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (middle)
+                                                      text2.text="<u>​    </u>"; // no-width space "​" plus four spaces
+                                                      cursor.add(text2);
+                                                      var text3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline.
                                                       text3.pos.x = -0.5;
-						      text3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
-						      text3.text="<u>​    </u>"; // no-width space "​" plus four spaces
-						      cursor.add(text3);
-						      eighthTie = 0;
-						}
+                                                      text3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
+                                                      text3.text="<u>​    </u>"; // no-width space "​" plus four spaces
+                                                      cursor.add(text3);
+                                                }
 //=============================================================================
 //                                DOTTED NOTES
 //=============================================================================
                                                 // alternatively, there is a property somewhere called note.dotCount which could be helpful
-						if (cursor.element.duration.ticks==720) // dotted QUARTER, since it has no underline, needs an extra space to line up with the eighths and shorter
+                                                if (cursor.element.duration.ticks==720) // dotted QUARTER, since it has no underline, needs an extra space to line up with the eighths and shorter
                                                 { // DOTTED QUARTER, add dot only
-                                                      text.text+=" <font size=\"7\"/>•"; //</font> dotted quarter in a smaller font
-                                                      // 2018-01-18 0939 removing "</font>" from end of text, seems to break when saved.
-	       					}
+                                                      text.text+=" <font size=\"7\"/>•"; // dotted quarter in a smaller font
+                                                }
                                                 if (cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180) // could also add dotted 32ndths, however that's beyond the scope of this project
                                                 { // DOTTED EIGHTH or SIXTEENTH, add dot only
-                                                      text.text+="<font size=\"7\"/>•"; // </font>dotted eighth OR sixteenth, in a smaller font
-	       					}
-
-						cursor.add(text);
+                                                      text.text+="<font size=\"7\"/>•"; // dotted eighth OR sixteenth, in a smaller font
+                                                }
+                                                cursor.add(text);
 
 //=============================================================================
 //                           BEAMS (JIANPU UNDERLINE)
 //=============================================================================
-// this doesn't beam rests; rest to rest beaming shouldn't exist, but eighth note to eighth rest should be able to beam somehow...
+// this doesn't beam rests; rest to rest beaming shouldn't exist, but eighth note to eighth rest should be able to beam somehow... Later project.
 // 2018-01-23 tried using element.line to draw a line directly, but it seems like it isn't possible to draw lines from here.
 // 2018-01-23 added a no-width space to the beginning of each set of underlined spaces. On opening a file,
 // MuseScore won't recognize a stafftext which contains only standard space characters.
@@ -267,7 +280,7 @@ MuseScore {
                                                             var beamLength = cursor.element.pagePos.x - lastBeamX; //cursor.element.beam.bbox.width;
                                                             //console.log("beamLength " + beamLength)
                                                             var jpbeamLength = (beamLength * 2).toFixed(0);
-						            // this seems messy 
+                                                            // this seems messy 
                                                             var oneSpace = "                                              ";
                                                             var moreSpaces = oneSpace.substring(1, jpbeamLength); 
                                                             // if only we could use .repeat() in this code...
@@ -275,36 +288,34 @@ MuseScore {
                                                             
                                                             var textBeam = newElement(Element.STAFF_TEXT);
                                                             textBeam.pos.x = -beamLength ; // start drawing to the left of the current note by the length of the beam
-						            textBeam.pos.y = yOff + 0.0; // this is the position above the line
+                                                            textBeam.pos.y = yOff + 0.0; // this is the position above the line
                                                             textBeam.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
-						            cursor.add(textBeam);
-						            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 240) { //both ends of beam are shorter than eighth, i.e. at least SIXTEENTH, so at least a double-beam
+                                                            cursor.add(textBeam);
+                                                            if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 240) { //both ends of beam are shorter than eighth, i.e. at least SIXTEENTH, so at least a double-beam
                                                                   var textBeam2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-beam. 
                                                                   textBeam2.pos.x = -beamLength; 
                                                                   textBeam2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
                                                                   textBeam2.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
                                                                   cursor.add(textBeam2);
-						            }
+                                                            }
                                                             if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 120) { //both ends of beam are shorter than sixteenth, i.e. at least THIRTYSECOND, so at least a triple-beam
                                                                   var textBeam3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-beam. 
                                                                   textBeam3.pos.x = -beamLength; 
                                                                   textBeam3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
                                                                   textBeam3.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
                                                                   cursor.add(textBeam3);
-						            }
-                                                            
-                                                            lastBeamX = cursor.element.pagePos.x; // on beams of over 2 notes, draw each
-                                                            // segment individually; this way sixteenths and 32nds can be handled also
-                                                            // Therefore we update the drawback X position each time we draw
-                                                            lastBeamTicks = cursor.element.duration.ticks; //same with ticks, so we can compare lengths next time, determine number of underlines 
+                                                            }
                                                       }
                                                       else { 
                                                       // this means we are starting a new beam. We have to draw it later, just get the info first.
                                                             console.log("beam on current note, left end of beam. Storing information for later")
                                                             lastBeam = cursor.element.beam
-                                                            lastBeamX = cursor.element.pagePos.x
-                                                            lastBeamTicks = cursor.element.duration.ticks
                                                       }
+                                                      // on beams of over 2 notes, draw each segment individually; this way sixteenths
+                                                      // and 32nds can be handled also. Therefore we update the drawback X position
+                                                      // and ticks each time we draw
+                                                      lastBeamX = cursor.element.pagePos.x
+                                                      lastBeamTicks = cursor.element.duration.ticks
                                                 }
 
 //=============================================================================
@@ -357,56 +368,67 @@ MuseScore {
                                                       };
                                                 }
                                                 
-                                                //console.log("isSharp = " + isSharp + "  isFlat = " + isFlat);
                                                 if (isFlat) {              //  ♭  Flat
                                                       var textF = newElement(Element.STAFF_TEXT); 
                                                       textF.pos.x = -0.8;
-						      textF.pos.y = yOff - 0.8; 
-      						      textF.text="♭"; 
-						      cursor.add(textF);
-						} 
+                                                      textF.pos.y = yOff - 0.8; 
+                                                      textF.text="♭"; 
+                                                      cursor.add(textF);
+                                                } 
                                                 else if (isSharp) {        //  ♯  Sharp
                                                       var textS = newElement(Element.STAFF_TEXT);  
                                                       textS.pos.x = -0.8;
-						      textS.pos.y = yOff - 0.8; 
-      						      textS.text="♯"; 
-						      cursor.add(textS);
+                                                      textS.pos.y = yOff - 0.8; 
+                                                      textS.text="♯"; 
+                                                      cursor.add(textS);
                                                 }
                                                 
                                                 
 //=============================================================================
 //                         UPPER and LOWER OCTAVE DOTS
 //=============================================================================
+                                                // octave is an integer with the number of dots needed (-down, +up)
                                                 // check if needs DOWN octave dot
-						if (octave<0) { // could add ability for double dots below, however outside our current needs
-						      var text = newElement(Element.STAFF_TEXT);
+                                                if (octave<0) { // could add ability for double dots below, however outside our current needs
+                                                      var text = newElement(Element.STAFF_TEXT);
                                                       text.pos.x = 0.2; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
-				              	      text.pos.y =  yOff + 1.25; // this is the position above the line for the jianpu UNDER DOT
-						      if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
-						      {
-					                    text.pos.y =  yOff + 1.6; // the underdot for 8ths is lower, settled at 1.6
-						      }
-						      else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
-						      {
-					                    text.pos.y =  yOff + underlineSpacing + 1.6 // the underdot for 16ths is lower
-						      }
-						      else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90)
-						      {
-					                    text.pos.y =  yOff + (underlineSpacing * 2) + 1.6; // the underdot for 32ndths is lower yet
-						      }
+                                            	      text.pos.y =  yOff - underdotPositionSpinBox.value; // this is the position above the line for the jianpu UNDER DOT
+                                                      if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
+                                                      {
+                                                            text.pos.y =  yOff + underlineSpacing - underdotPositionSpinBox.value; // the underdot for 8ths is lower
+                                                      }
+                                                      else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
+                                                      {
+                                                            text.pos.y =  yOff + (underlineSpacing * 2) - underdotPositionSpinBox.value; // the underdot for 16ths is lower
+                                                      }
+                                                      else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90)
+                                                      {
+                                                            text.pos.y =  yOff + (underlineSpacing * 3) - underdotPositionSpinBox.value; // the underdot for 32ndths is lower yet
+                                                      }
                                                       text.text = "<font size=\"7\"/>•";
-						      cursor.add(text);
+                                                      cursor.add(text);
                                                 }
                                                 // check if needs UP octave dot
-						if (octave>0) { // likewise could add ability for double dots above, however also outside our current needs
-						      var text = newElement(Element.STAFF_TEXT);
+                                                if (octave>0) { // likewise could add ability for double dots above, however also outside our current needs
+                                                      var text = newElement(Element.STAFF_TEXT);
                                                       text.pos.x = 0.15; // DOT needs a slight right
-				              	      text.pos.y =  yOff + -1.3; // this is the position above the line for the jianpu OVER DOT
-						      text.text = "<font size=\"7\"/>•";//</font>
+                                                      text.pos.y =  yOff + -1.3; // this is the position above the line for the jianpu OVER DOT
+                                                      text.text = "<font size=\"7\"/>•";//</font>
                                                       cursor.add(text);
-						}
+                                                }
                                                 //console.log(cursor.element.BarLine)
-					  }
+
+//=============================================================================
+//                            TIES (development)
+//=============================================================================
+                                               
+                                                //later project 
+                                                if (note.tieBack || note.tieFor) {
+                                                      console.log("note.tied = "  + note.tied); 
+                                                      console.log("note.tieBack = " + note.tieBack);
+                                                      console.log("note.tieFor = " + note.tieFor);                                                
+                                                }
+                                          }
                                     }
                               }
 
@@ -417,142 +439,133 @@ MuseScore {
                               {
                                     console.log("Rest");
                                     var restLength = cursor.element.duration.ticks;
-				    var text = newElement(Element.STAFF_TEXT);
+                                    var text = newElement(Element.STAFF_TEXT);
                                     text.pos.x = 1;
-			            if (cursor.element.duration.ticks<241)
-				    {   // adjust 8ths and 16ths to the left
-				          text.pos.x =  -0.2;
-				    }
-				    text.pos.y =  yOff + 0.0; // this is the position above the line for the jianpu note
-				    text.text="0"; // rest
-				    cursor.add(text);
-				    if (cursor.element.duration.ticks==960)
-				    {
-				          var text2 = newElement(Element.STAFF_TEXT);
-                                          text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—"; // half</font>
-					  cursor.add(text2);
+                                    if (cursor.element.duration.ticks<241)
+                                    {   // adjust 8ths and 16ths to the left
+                                          text.pos.x =  -0.2;
                                     }
-				    else if (cursor.element.duration.ticks==1440)
-				    {
-					  var text2 = newElement(Element.STAFF_TEXT);
+                                    text.pos.y =  yOff + 0.0; // this is the position above the line for the jianpu note
+                                    text.text="0"; // rest
+                                    cursor.add(text);
+                                    if (cursor.element.duration.ticks==960)
+                                    {
+                                          var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—   —"; // dotted half</font>
-					  cursor.add(text2);
+                                          text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+                                          text2.text="<font size=\"7\"/>—"; // half</font>
+                                          cursor.add(text2);
                                     }
-				    else if (cursor.element.duration.ticks==1920)
-				    {
-					  var text2 = newElement(Element.STAFF_TEXT);
+                                    else if (cursor.element.duration.ticks==1440)
+                                    {
+                                          var text2 = newElement(Element.STAFF_TEXT);
                                           text2.pos.x = 1+1.35;
-					  text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
-					  text2.text="<font size=\"7\"/>—   —   —"; // whole</font>
-					  cursor.add(text2);
+                                          text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+                                          text2.text="<font size=\"7\"/>—   —"; // dotted half</font>
+                                          cursor.add(text2);
                                     }
-				    else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
-				    {
-					  text.text="<u> 0 </u>"; // eighth
+                                    else if (cursor.element.duration.ticks==1920)
+                                    {
+                                          var text2 = newElement(Element.STAFF_TEXT);
+                                          text2.pos.x = 1+1.35;
+                                          text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
+                                          text2.text="<font size=\"7\"/>—   —   —"; // whole</font>
+                                          cursor.add(text2);
+                                    }
+                                    else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
+                                    {
+                                          text.text="<u> 0 </u>"; // eighth
                                           text.pos.x = -0.5
-				    }
-				    else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
+                                    }
+                                    else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
                                     {
                                           text.text="<u> 0 </u>"; // sixteenth
-		                          text.pos.x = -0.5;
+                                          text.pos.x = -0.5;
                                           text.pos.y = yOff
-				          var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
+                                          var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                           text2.pos.x = -0.5; //-2.5 * (graceChords.length - i);
-				          text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
-      					  text2.text="<u>​    </u>"; //that lovely no-width space
-					  cursor.add(text2);
-                                          eighthTie = 0;
-				    }
-			      }
-                              /*if (cursor.element.type == Element.BAR_LINE) {
-                                   console.log("BARLINE")
+                                          text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
+                                          text2.text="<u>​    </u>"; //that lovely no-width space
+                                          cursor.add(text2);
+                                    }
                               }
-                              if (!!cursor.element.barline) {
-                                   console.log("BARLINE TOO")
-                              }*/
-
+                              
                               cursor.next();		  
                         }
                   }
             }
 
 //=============================================================================
-//                         testing for barline entry
+//                               BARLINES
 //=============================================================================
             var cursor2 = curScore.newCursor()
-            cursor2.rewind(0) // if no selection, beginning of score
+            var lastMeasureX = 0
+            cursor2.rewind(1) // if no selection, beginning of score
+            if (fullScore) {
+                  cursor2.rewind(0)
+            }
             var m = cursor2.measure
-            while (m ) { //&& (fullScore || cursor2.tick < endTick)
-                  console.log(m)
-                  console.log(cursor2.tick)
-                  console.log("m.pos.x " + m.pos.x) 
-                  console.log("cursor2.measure.parent.type " + cursor2.element.parent.type)
-                  var textBar = newElement(Element.STAFF_TEXT);
-                  textBar.pos.x = -2.5;
-                  textBar.pos.y =  yOff - 0.8;
-                  textBar.text="<font size=\"20\"/>|"; // </font>
-                  cursor2.add(textBar);
+            while (m && (fullScore || cursor2.tick < endTick)) {
+                  //console.log("m " + m)
+                  //console.log("cursor2.tick " + cursor2.tick)
+                  console.log("m.pos.x " + m.pos.x);
+                  console.log("m.bbox.width " + m.bbox.width); 
+                  console.log("m.firstSegment.pos.x " + m.firstSegment.pos.x); 
+                  var barRightX = -m.firstSegment.pos.x + m.bbox.width - 0.5
+                  var barLeftX = -m.firstSegment.pos.x - 0.5
+                  if (m.pos.x != 0) { //not the first measure; ignore first measure
+                        if (lastMeasureX == 0) { //previous measure was 0 i.e. this is second measure, draw LEFT and RIGHT, first LEFT
+                              console.log("left barline")
+                              var textBarLeft = newElement(Element.STAFF_TEXT);
+                              textBarLeft.pos.x = barLeftX; //-m.firstSegment.pos.x + m.bbox.width - 0.5; //-2.5
+                              textBarLeft.pos.y =  yOff - 0.8;
+                              textBarLeft.text="<font size=\"20\"/>|"; 
+                              cursor2.add(textBarLeft);
+                        }
+                        console.log("right barline")                      
+                        var textBarRight = newElement(Element.STAFF_TEXT); //draw RIGHT barline
+                        textBarRight.pos.x = barRightX; //-m.firstSegment.pos.x + m.bbox.width - 0.5; //-2.5
+                        textBarRight.pos.y =  yOff - 0.8;
+                        textBarRight.text="<font size=\"20\"/>|"; 
+                        cursor2.add(textBarRight);
+                  }
+                  lastMeasureX = m.pos.x
                   cursor2.nextMeasure();
+                  
                   m = cursor2.measure;
             }
       }
 
-      function shapeNotes(note, curKey) {/* eliminated this 2017-12-20, since we are working with shapes separately.  Wouldn't hurt
-        //                                to have this enabled in production, though
-        console.log("shapeNotes")
-          var tpcNames = "FCGDAEB"
-          var name = tpcNames[(note.tpc + 1) % 7]
+      function shapeNotes(note, curKey) { 
+        
+            console.log("shapeNotes")
+            var tpcNames = "FCGDAEB"
+            var name = tpcNames[(note.tpc + 1) % 7]
 
-          var names = "CDEFGAB"
-          var scale = scales[curKey+7];
-          
-          var degrees = [
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL,
-              NoteHead.HEAD_NORMAL
-            ]; 
-          if (shape4CheckBox.checked)
-            degrees = [ // 4 notes
-                NoteHead.HEAD_FA,
-                NoteHead.HEAD_SOL,
-                NoteHead.HEAD_LA,
-                NoteHead.HEAD_FA,
-                NoteHead.HEAD_SOL,
-                NoteHead.HEAD_LA,
-                NoteHead.HEAD_MI
-              ];
-          else if (shape7CheckBox.checked)
-            degrees = [ // 7 notes
-                NoteHead.HEAD_DO,
-                NoteHead.HEAD_RE,
-                NoteHead.HEAD_MI,
-                NoteHead.HEAD_FA,
-                NoteHead.HEAD_SOL,
-                NoteHead.HEAD_LA,
-                NoteHead.HEAD_TI
-              ];
+            var names = "CDEFGAB"
+            var scale = scales[curKey+7];
+
+            var degrees = [ 
+                  NoteHead.HEAD_DO,
+                  NoteHead.HEAD_RE,
+                  NoteHead.HEAD_MI,
+                  NoteHead.HEAD_FA,
+                  NoteHead.HEAD_SOL,
+                  NoteHead.HEAD_LA,
+                  NoteHead.HEAD_TI
+            ];
    
-          note.headGroup = degrees[(names.indexOf(name) - names.indexOf(scale) +28)%7]; */          
+      note.headGroup = degrees[(names.indexOf(name) - names.indexOf(scale) +28)%7];           
       }
 
       function apply() {
-        console.log("hello shapeNotes");
-        curScore.startCmd();
-        applyToNotesInSelection(shapeNotes);
-        curScore.endCmd();
+            console.log("hello jianpu");
+            curScore.startCmd();
+            applyToNotesInSelection(shapeNotes); //
+            curScore.endCmd();
       }
 
       onRun: {
-            apply();
-            Qt.quit();
             if (!curScore)
                   Qt.quit();
 
