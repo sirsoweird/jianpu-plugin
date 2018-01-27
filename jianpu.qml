@@ -17,7 +17,7 @@ MuseScore {
 
       id: window
       width: 240
-      height: 150
+      height: 170
       GridLayout {
             id: grid
             columns: 2
@@ -106,6 +106,7 @@ MuseScore {
             var endStaff;
             var endTick;
             var fullScore = false;
+            var oneSpace = "                                              "; // because we can't use .repeat in this code for repeating spaces 
             if (!cursor.segment) { // no selection
                   fullScore = true;
                   startStaff = 0; // start with 1st staff and end with last
@@ -130,7 +131,7 @@ MuseScore {
                         cursor.rewind(1); // sets voice to 0
                         cursor.voice = voice; //voice has to be set after goTo
                         cursor.staffIdx = staff;
-                        var eighthTie =  0;
+                        var eighthTie =  0; //should remove references to this, nonfunctional
                         var lastBeam = 0;      // identifier of start of beam 
                         var lastBeamX = 0;     // pos.x value of start of beam 
                         var lastBeamTicks = 0;
@@ -185,35 +186,93 @@ MuseScore {
                                                 text.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
                                                       subsequent note in the chord, this should be nonfunctional if we're 
                                                       only doing the top note per chord.  */
-                                                text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note
+                                                text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note. yOff is already inverted
                                                 text.text = jpText;
                                                 console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
+//=============================================================================
+//           AFTER-DASHES on long notes (Half, dotted Half, and Whole)
+//=============================================================================
+                                                // for the half through whole notes, first determine if there's another note or rest in this measure. 
+                                                // If so, we can centre the dashes between this note and the next. Otherwise, we'll centre the 
+                                                // dashes between this note and the end barline for this measure.
+                                                console.log("cursor.segment.next " + cursor.segment.next + "; cursor.tick " + cursor.tick) //+ "; endTick " + endTick)
+                                                // this next if statement only needs to be triggered if cursor.element.duration.ticks >= 960
+                                                var dashPosCenter
+                                                if (cursor.element.duration.ticks >= 960) {
+                                                      if ((cursor.tick + cursor.element.duration.ticks) >= cursor.measure.lastSegment.tick) {
+                                                            //this is the last note in this voice in this measure, so we base off right barline
+                                                            //((-cursor.segment.pos.x + cursor.measure.bbox.width - 0.5) / 2)
+                                                            dashPosCenter = ((-cursor.segment.pos.x + cursor.measure.bbox.width - 1) / 2)
+                                                            /*var textTestA = newElement(Element.STAFF_TEXT);
+                                                            textTestA.pos.x = dashPosCenter
+                                                            textTestA.pos.y = yOff;
+                                                            textTestA.text = "$"; //<center> doesn't work in STAFF_TEXT
+                                                            //textTestA.text = textTestA.text + textTestA.pos.width
+                                                            cursor.add(textTestA);*/
+                                                      }
+                                                      else {
+                                                            //there is at least one more note in this voice in this measure, so we 
+                                                            //base off next note where ((same voice) or (tick == (cursor.tick + element.ticks)))
+                                                            //But, we don't know if the other voices have notes before the next note in this voice...
+                                                            var targetTick = (cursor.tick + cursor.element.duration.ticks)
+                                                            var targetSeg; //we'll find that segment and hunt it down
+                                                            //this seems messy.  But it was easier than defining a new cursor and iterating to 
+                                                            //the target segment.  Maybe not, though.
+                                                            if (cursor.segment.next.tick == targetTick){ //maybe, the next segment is the note we want
+                                                                  targetSeg = cursor.segment.next
+                                                            } else if (cursor.measure.lastSegment.tick == targetTick){//we have the situation where we have to find the right segment in this measure.
+                                                                  targetSeg = cursor.measure.lastSegment // let's play hide and seek
+                                                            } else if (cursor.segment.next.next.tick == targetTick){
+                                                                  targetSeg = cursor.segment.next.next
+                                                            } else if (cursor.segment.next.next.next.tick == targetTick){
+                                                                  targetSeg = cursor.segment.next.next.next
+                                                            } else if (cursor.segment.next.next.next.next.tick == targetTick){
+                                                                  targetSeg = cursor.segment.next.next.next.next
+                                                            } else if (cursor.segment.next.next.next.next.next.tick == targetTick){
+                                                                  targetSeg = cursor.segment.next.next.next.next.next // no one can say we gave up too easily
+                                                            } else {
+                                                                  targetSeg = cursor.segment.next //hopefully this never happens 
+                                                            }
+                                                            
+                                                            dashPosCenter = (targetSeg.pos.x - cursor.segment.pos.x) / 2 ;
+                                                            /* var textTestB = newElement(Element.STAFF_TEXT);
+                                                            textTestB.pos.x = dashPosCenter;
+                                                            textTestB.pos.y = yOff;
+                                                            textTestB.text = "¥";
+                                                            cursor.add(textTestB); */
+                                                      }
+                                                }
                                                 
                                                 if (cursor.element.duration.ticks==1920) // WHOLE
                                                 {
+                                                      var dashSpace3 = oneSpace.substring(1, Math.floor(dashPosCenter * 0.9));
                                                       var text2 = newElement(Element.STAFF_TEXT);
-                                                      text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
+                                                      text2.pos.x = dashPosCenter * 0.5; // since dPC is centre for one dash, we'll go 1/2 for three dashes 
                                                       text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
-                                                      text2.text="<font size=\"7\"/>—   —   —"; //</font> whole. Font size 4 is too small.  Trying 7 2018-01-16
+                                                      text2.text="<font size=\"7\"/>—" + dashSpace3 + "—" + dashSpace3 + "—"; //we should use Math.floor(dashPosCenter * magic) as the number of spaces
                                                       cursor.add(text2);
-                                                      eighthTie = 0;
                                                 }
                                                 else if (cursor.element.duration.ticks==1440) // DOTTED HALF
                                                 {
+                                                      var dashSpace2 = oneSpace.substring(1, Math.floor(dashPosCenter * 1.2));
                                                       var text2 = newElement(Element.STAFF_TEXT);
-                                                      text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
+                                                      text2.pos.x = dashPosCenter * 0.67; //since dPC is centre for one dash, we'll go 2/3 for two dashes 
                                                       text2.pos.y =  yOff + 0.1; // this is the position above the line for the jianpu note
-                                                      text2.text="<font size=\"7\"/>—   —"; //</font> dotted half
+                                                      text2.text="<font size=\"7\"/>—" + dashSpace2 + "—"; // we should use Math.floor(dashPosCenter) as the number of spaces
                                                       cursor.add(text2);
                                                 }
                                                 else if (cursor.element.duration.ticks==960) // HALF
                                                 {
                                                       var text2 = newElement(Element.STAFF_TEXT);
-                                                      text2.pos.x = 3.95; //(-2.5 * (graceChords.length - (i-1)))+3.95;
+                                                      text2.pos.x = dashPosCenter; //(-2.5 * (graceChords.length - (i-1)))+3.95;
                                                       text2.pos.y = yOff + 0.1; // this is the position above the line for the jianpu note
                                                       text2.text="<font size=\"7\"/>—"; //</font> half
                                                       cursor.add(text2);
                                                 }
+//=============================================================================
+//                 UNDERLINES on short notes (Eighth and shorter)
+//=============================================================================
+                                                // underlines for short notes (eighth and shorter)
                                                 else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360) // EIGHTH or DOTTED EIGHTH
                                                 {
                                                       text.text="<u> "+jpText+" </u>"; // eighth
@@ -222,7 +281,7 @@ MuseScore {
                                                 }
                                                 else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180) // SIXTEENTH or DOTTED SIXTEENTH
                                                 {      
-                                                text.text="<u> "+jpText+" </u>"; // sixteenth
+                                                      text.text="<u> "+jpText+" </u>"; // sixteenth
                                                       text.pos.x = -0.5 // * (graceChords.length - i);
                                                       var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                                       text2.pos.x = -0.5; //-2.5 * (graceChords.length - i);
@@ -281,7 +340,7 @@ MuseScore {
                                                             //console.log("beamLength " + beamLength)
                                                             var jpbeamLength = (beamLength * 2).toFixed(0);
                                                             // this seems messy 
-                                                            var oneSpace = "                                              ";
+                                                            // moving oneSpace to start so we can use it freely throughout
                                                             var moreSpaces = oneSpace.substring(1, jpbeamLength); 
                                                             // if only we could use .repeat() in this code...
                                                             //console.log("moreSpaces :" + moreSpaces + ": jpbeamLength = " + jpbeamLength);
@@ -440,7 +499,7 @@ MuseScore {
                                     console.log("Rest");
                                     var restLength = cursor.element.duration.ticks;
                                     var text = newElement(Element.STAFF_TEXT);
-                                    text.pos.x = 1;
+                                    text.pos.x = 0;
                                     if (cursor.element.duration.ticks<241)
                                     {   // adjust 8ths and 16ths to the left
                                           text.pos.x =  -0.2;
