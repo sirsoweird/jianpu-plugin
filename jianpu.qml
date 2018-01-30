@@ -33,7 +33,7 @@ MuseScore {
                   Layout.minimumWidth: 60
                   Layout.minimumHeight: 20
                   decimals: 1
-                  stepSize: 0.1
+                  stepSize: 0.2
                   maximumValue: 3.0
                   minimumValue: -1.0
                   value: 1.0
