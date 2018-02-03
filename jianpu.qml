@@ -65,21 +65,18 @@ MuseScore {
                   value: -1.30
             }
             Text {
-                  text: "Lowest undotted DO:"
-                  //ToolTip.visible: up
-                  //ToolTip.text: "60 = middle C"
-
+                  text: "Octave offset:"
             }
             SpinBox {
-                  id: noDotDo
+                  id: octaveOffset
                   Layout.minimumWidth: 60
                   Layout.minimumHeight: 20
                   decimals: 0
                   stepSize: 1
-                  maximumValue: 72
-                  minimumValue: 55
-                  value: 60
-            }
+                  maximumValue: 1
+                  minimumValue: -1
+                  value: 0
+            } //this doesn't function as expected. Changing to octave offset
             CheckBox {
                   id: shapeCheckBox
                   text: "Shape notes also?"
@@ -188,7 +185,7 @@ MuseScore {
                                                 //console.log("note.pitch " + note.pitch);
                                                 //console.log("scaleTwelve[cursor.keySignature+7] =" + scaleTwelve[cursor.keySignature+7]);
                                                 var names = "CDEFGAB";
-                                                var octave = Math.floor(((note.pitch - scaleTwelve[cursor.keySignature+7]) - noDotDo.value) / 12 ) // 60 is our magic number at MIDDLE C
+                                                var octave = Math.floor(((note.pitch - scaleTwelve[cursor.keySignature+7]) - 60) / 12 ) + octaveOffset.value // 60 is our magic number at MIDDLE C
                                                 // the first DO at or above MIDDLE C will be the 'no dot DO'
                                                 // octave is 0 when no dots, positive: number of dots above, negative: number of dots below.
                                                 var scale = scales[cursor.keySignature+7]; //scale is the ABC of our current key signature
