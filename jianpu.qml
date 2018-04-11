@@ -36,7 +36,7 @@ MuseScore {
                   stepSize: 0.2
                   maximumValue: 3.0
                   minimumValue: -1.0
-                  value: 1.0
+                  value: 0.0
             }
             Text {
                   text: "Underline spacing:"
@@ -49,7 +49,7 @@ MuseScore {
                   stepSize: 0.05
                   maximumValue: 1.0
                   minimumValue: 0.1
-                  value: 0.5
+                  value: 0.35
             }
             Text {
                   text: "Underdot position:"
@@ -62,7 +62,7 @@ MuseScore {
                   stepSize: 0.05
                   maximumValue: 0.0
                   minimumValue: -2.0
-                  value: -1.30
+                  value: -1.50
             }
             Text {
                   text: "Octave offset:"
@@ -76,7 +76,7 @@ MuseScore {
                   maximumValue: 1
                   minimumValue: -1
                   value: 0
-            } //this doesn't function as expected. Changing to octave offset
+            }
             CheckBox {
                   id: shapeCheckBox
                   text: "Shape notes also?"
@@ -104,9 +104,10 @@ MuseScore {
       }
 
 
-      //                              -7   -6   -5   -4   -3   -2   -1    0    1    2    3    4    5    6    7
-      property variant scales :      ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F', 'C'];
-      property variant scaleTwelve : [ 0 ,  6 ,  1 ,  8 ,  3 , 10 ,  5 ,  0 ,  7 ,  2 ,  9 ,  4 , 11 ,  6 ,  0 ];
+      //                               -7   -6   -5   -4   -3   -2   -1    0    1    2    3    4    5    6    7
+      property variant scales :       ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F', 'C'];
+      property variant scaleTwelveB : [ 2,   8,   3,  10,   5,   0,   7,   2,   9,   4,  11,   6,   1,   8,   2 ];
+      property variant scaleTwelveC : [ 0,   6,   1,   8,   3,  10,   5,   0,   7,   2,   9,   4,  11,   6,   0 ];
       // scaleTwelve is in base 12; only used as an offset subtracted from the midi note value to arrive at an octave value
 
       // Apply the given function to all notes in selection
@@ -148,6 +149,7 @@ MuseScore {
                         var lastBeamX = 0;     // pos.x value of start of beam 
                         var lastBeamTicks = 0;
                         var yOff = -yOffSpinBox.value; // .pos.y OFFSET. Positive is lower, negative is higher; so we negative the spinbox to get the correct value 
+                        var yOffUnderline = yOff + 0.2  // position offset for first underline, below jianpu number by amount set here
                         var underlineSpacing = underlineSpacingSpinBox.value; //Spacing between stacked underlines. Positive
                         if (fullScore)
                               cursor.rewind(0) // if no selection, beginning of score
@@ -183,9 +185,9 @@ MuseScore {
                                                 var name = tpcNames[(note.tpc + 1) % 7]; // name is the ABC for the NOTE we are on
                                                 //console.log("cursor.keySignature " + cursor.keySignature)
                                                 //console.log("note.pitch " + note.pitch);
-                                                //console.log("scaleTwelve[cursor.keySignature+7] =" + scaleTwelve[cursor.keySignature+7]);
+                                                //console.log("scaleTwelveB[cursor.keySignature+7] =" + scaleTwelveB[cursor.keySignature+7]);
                                                 var names = "CDEFGAB";
-                                                var octave = Math.floor(((note.pitch - scaleTwelve[cursor.keySignature+7]) - 60) / 12 ) + octaveOffset.value // 60 is our magic number at MIDDLE C
+                                                var octave = Math.floor(((note.pitch - scaleTwelveB[cursor.keySignature+7]) - 58) / 12 ) + octaveOffset.value // 60 is our magic number at MIDDLE C
                                                 // the first DO at or above MIDDLE C will be the 'no dot DO'
                                                 // octave is 0 when no dots, positive: number of dots above, negative: number of dots below.
                                                 var scale = scales[cursor.keySignature+7]; //scale is the ABC of our current key signature
@@ -291,8 +293,8 @@ MuseScore {
                                                       //we've had issues getting it to line up with different spacing / font size.
                                                       //text.text="<u> "+jpText+" </u>";
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
-                                                      text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                                      text1.pos.y = yOff; // this is the position above the line for the jianpu underline (top)
+                                                      text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                                      text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                                       text1.text="<u>​   </u>"; // no-width space "​" plus four spaces 
                                                       cursor.add(text1);
                                                 }
@@ -301,14 +303,14 @@ MuseScore {
                                                       //text.text="<u> "+jpText+" </u>"; // sixteenth
                                                       //text.pos.x = -0.5 // * (graceChords.length - i);
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
-                                                      text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                                      text1.pos.y = yOff; // this is the position above the line for the jianpu underline (top)
+                                                      text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                                      text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                                       text1.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                                       cursor.add(text1);
                                                       
                                                       var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
-                                                      text2.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                                      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
+                                                      text2.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                                      text2.pos.y = yOffUnderline + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
                                                       text2.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                                       cursor.add(text2);
                                                 }
@@ -317,20 +319,20 @@ MuseScore {
                                                       //text.text="<u> "+jpText+" </u>"; 
                                                       //text.pos.x = -0.5 ;
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
-                                                      text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                                      text1.pos.y = yOff; // this is the position above the line for the jianpu underline (top)
+                                                      text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                                      text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                                       text1.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                                       cursor.add(text1);
                                                       
                                                       var text2 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
-                                                      text2.pos.x = -0.4;
-                                                      text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (middle)
+                                                      text2.pos.x = -0.3;
+                                                      text2.pos.y = yOffUnderline + underlineSpacing; // this is the position above the line for the jianpu underline (middle)
                                                       text2.text="<u>​   </u>"; // no-width space "​" plus 3 spaces
                                                       cursor.add(text2);
                                                       
                                                       var text3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline.
-                                                      text3.pos.x = -0.4;
-                                                      text3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
+                                                      text3.pos.x = -0.3;
+                                                      text3.pos.y = yOffUnderline + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
                                                       text3.text="<u>​   </u>"; // no-width space "​" plus 3 spaces
                                                       cursor.add(text3);
                                                 }
@@ -377,20 +379,20 @@ MuseScore {
                                                             
                                                             var textBeam = newElement(Element.STAFF_TEXT);
                                                             textBeam.pos.x = -beamLength ; // start drawing to the left of the current note by the length of the beam
-                                                            textBeam.pos.y = yOff + 0.0; // this is the position above the line
+                                                            textBeam.pos.y = yOffUnderline + 0.0; // this is the position above the line
                                                             textBeam.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
                                                             cursor.add(textBeam);
                                                             if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 240) { //both ends of beam are shorter than eighth, i.e. at least SIXTEENTH, so at least a double-beam
                                                                   var textBeam2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-beam. 
                                                                   textBeam2.pos.x = -beamLength; 
-                                                                  textBeam2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
+                                                                  textBeam2.pos.y = yOffUnderline + underlineSpacing; // this is the position above the line for the jianpu underline (lower)
                                                                   textBeam2.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
                                                                   cursor.add(textBeam2);
                                                             }
                                                             if (Math.max(lastBeamTicks, cursor.element.duration.ticks) < 120) { //both ends of beam are shorter than sixteenth, i.e. at least THIRTYSECOND, so at least a triple-beam
                                                                   var textBeam3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-beam. 
                                                                   textBeam3.pos.x = -beamLength; 
-                                                                  textBeam3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
+                                                                  textBeam3.pos.y = yOffUnderline + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
                                                                   textBeam3.text="<u>​ " + moreSpaces + "</u>"; //no-width space "​" plus moreSpaces
                                                                   cursor.add(textBeam3);
                                                             }
@@ -410,7 +412,7 @@ MuseScore {
 //=============================================================================
 //                                  SHARPS and FLATS
 //=============================================================================
-                                                var noteKey = (note.pitch - scaleTwelve[cursor.keySignature+7]) % 12; 
+                                                var noteKey = (note.pitch - scaleTwelveC[cursor.keySignature+7]) % 12; 
                                                 //noteKey is range 0 to 11 by half-steps, DO is 0
                                                 var isSharp = false
                                                 var isFlat = false
@@ -480,7 +482,7 @@ MuseScore {
                                                 // check if needs DOWN octave dot
                                                 if (octave<0) { // could add ability for double dots below, however outside our current needs
                                                       var text = newElement(Element.STAFF_TEXT);
-                                                      text.pos.x = 0.2; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
+                                                      text.pos.x = 0.25; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
                                             	      text.pos.y =  yOff - underdotPositionSpinBox.value; // this is the position above the line for the jianpu UNDER DOT
                                                       if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
                                                       {
@@ -500,8 +502,8 @@ MuseScore {
                                                 // check if needs UP octave dot
                                                 if (octave>0) { // likewise could add ability for double dots above, however also outside our current needs
                                                       var text = newElement(Element.STAFF_TEXT);
-                                                      text.pos.x = 0.15; // DOT needs a slight right
-                                                      text.pos.y =  yOff + -1.3; // this is the position above the line for the jianpu OVER DOT
+                                                      text.pos.x = 0.25; // DOT needs a slight right
+                                                      text.pos.y =  yOff - 0.8; // this is the position above the line for the jianpu OVER DOT
                                                       text.text = "<font size=\"7\"/>•";//</font>
                                                       cursor.add(text);
                                                 }
@@ -564,8 +566,8 @@ MuseScore {
                                     else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360) //eighth
                                     {
                                           var text1 = newElement(Element.STAFF_TEXT); // we have to do an underline. 
-                                          text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text1.pos.y = yOff; // this is the position above the line for the jianpu underline
+                                          text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline
                                           text1.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                           cursor.add(text1);
                                           //text.text="<u> 0 </u>"; // eighth
@@ -574,34 +576,34 @@ MuseScore {
                                     else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
                                     {
                                           var text1 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
-                                          text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text1.pos.y = yOff; // this is the position above the line for the jianpu underline (top)
+                                          text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                           text1.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                           cursor.add(text1);
                                           //text.text="<u> 0 </u>"; // sixteenth
                                           //text.pos.x = -0.5;
-                                          //text.pos.y = yOff
+                                          //text.pos.y = yOffUnderline
                                           var text2 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
-                                          text2.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
+                                          text2.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text2.pos.y = yOffUnderline + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
                                           text2.text="<u>​   </u>"; //that lovely no-width space
                                           cursor.add(text2);
                                     }
                                     else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90)
                                     {
                                           var text1 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
-                                          text1.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text1.pos.y = yOff; // this is the position above the line for the jianpu underline (top)
+                                          text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                           text1.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                           cursor.add(text1);
                                           var text2 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
-                                          text2.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text2.pos.y = yOff + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
+                                          text2.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text2.pos.y = yOffUnderline + underlineSpacing; // this is the position above the line for the jianpu underline (lowest)
                                           text2.text="<u>​   </u>"; //that lovely no-width space
                                           cursor.add(text2);
                                           var text3 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
-                                          text3.pos.x = -0.4; //-2.5 * (graceChords.length - i);
-                                          text3.pos.y = yOff + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
+                                          text3.pos.x = -0.3; //-2.5 * (graceChords.length - i);
+                                          text3.pos.y = yOffUnderline + (underlineSpacing * 2); // this is the position above the line for the jianpu underline (lowest)
                                           text3.text="<u>​   </u>"; //that lovely no-width space
                                           cursor.add(text3);
                                     }
