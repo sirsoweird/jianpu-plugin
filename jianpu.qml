@@ -340,13 +340,9 @@ MuseScore {
 //                                DOTTED NOTES
 //=============================================================================
                                                 // alternatively, there is a property somewhere called note.dotCount which could be helpful
-                                                if (cursor.element.duration.ticks==720) // dotted QUARTER, since it has no underline, needs an extra space to line up with the eighths and shorter
-                                                { // DOTTED QUARTER, add dot only
-                                                      text.text+=" <font size=\"7\"/>•"; // dotted quarter in a smaller font
-                                                }
-                                                if (cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180) // could also add dotted 32ndths, however that's beyond the scope of this project
-                                                { // DOTTED EIGHTH or SIXTEENTH, add dot only
-                                                      text.text+="<font size=\"7\"/>•"; // dotted eighth OR sixteenth, in a smaller font
+                                                if (cursor.element.duration.ticks==720 || cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180 || cursor.element.duration.ticks==90) // dotted QUARTER, EIGHTH, SIXTEENTH, or THIRTYSECONDTH
+                                                { // add dot only
+                                                      text.text+=" <font size=\"7\"/>•"; // dot in a smaller font
                                                 }
                                                 cursor.add(text);
 
