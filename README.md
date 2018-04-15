@@ -6,7 +6,6 @@ This plugin is not intended to be a main functioning part of MuseScore.  That is
 
 Some of the limitations built into initial implementation are:
 *  Only one staff / one voice functionality
-*  Only accounting for one octave dot below or above
 *  No support for triplets of any type (jianpu number will display, just no timing)
 *  Default undotted octave is hardcoded in.  The lowest undotted DO is B below middle C; the highest undotted DO is A above middle C. However, there is an octave adjustment if the default octave is not appropriate for a specific piece.
 *  Key signature not implemented
@@ -16,6 +15,6 @@ Some of the limitations built into initial implementation are:
 
 PLEASE BE AWARE THAT
 *  Commits prior to 2018-04-10 are for 2.1.3
-*  Commits after 2018-04-10 are for 2.2
+*  Commits after 2018-04-10 are for 2.2.1
 
 This is due to the font engine fix in 2.2
