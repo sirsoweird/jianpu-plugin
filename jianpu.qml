@@ -34,8 +34,8 @@ MuseScore {
                   Layout.minimumHeight: 20
                   decimals: 1
                   stepSize: 0.2
-                  maximumValue: 3.0
-                  minimumValue: -1.0
+                  maximumValue: 8.0
+                  minimumValue: -15.0
                   value: 0.0
             }
             Text {
@@ -61,8 +61,8 @@ MuseScore {
                   decimals: 2
                   stepSize: 0.05
                   maximumValue: 0.0
-                  minimumValue: -2.0
-                  value: -1.50
+                  minimumValue: -3.0
+                  value: -1.00
             }
             Text {
                   text: "Octave offset:"
@@ -73,8 +73,8 @@ MuseScore {
                   Layout.minimumHeight: 20
                   decimals: 0
                   stepSize: 1
-                  maximumValue: 1
-                  minimumValue: -1
+                  maximumValue: 2
+                  minimumValue: -2
                   value: 0
             }
             CheckBox {
@@ -196,33 +196,34 @@ MuseScore {
 //=============================================================================
 //                              MAIN JIANPU DRAWING
 //=============================================================================
-                                                var text = newElement(Element.STAFF_TEXT);
-                                                text.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
+                                                var text0 = newElement(Element.STAFF_TEXT); //text0 is the main jianpu
+                                                text0.pos.x = 0; /*-2.5 * (graceChords.length - i); //shift to the right for each 
                                                       subsequent note in the chord, this should be nonfunctional if we're 
                                                       only doing the top note per chord.  */
-                                                text.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note. yOff is already inverted
-                                                text.text = jpText;
+                                                text0.pos.y = yOff + 0.0; // this is the position above the line for the jianpu note. yOff is already inverted
+                                                text0.text = jpText;
                                                 console.log("jpText = " + jpText + ", octave = " + octave + ", ticks =" + cursor.element.duration.ticks)
+//=============================================================================
+//                                DOTTED NOTES
+//=============================================================================
+                                                var dots = note.dotsCount
+                                                for (; dots > 0; dots--)
+                                                {
+                                                      text0.text+=" <font size=\"7\"/>•"; // dot in a smaller font
+                                                }
+                                                cursor.add(text0); //finish main jianpu drawing
 //=============================================================================
 //           AFTER-DASHES on long notes (Half, dotted Half, and Whole)
 //=============================================================================
                                                 // for the half through whole notes, first determine if there's another note or rest in this measure. 
                                                 // If so, we can centre the dashes between this note and the next. Otherwise, we'll centre the 
                                                 // dashes between this note and the end barline for this measure.
-                                                console.log("cursor.segment.next " + cursor.segment.next + "; cursor.tick " + cursor.tick) //+ "; endTick " + endTick)
-                                                // this next if statement only needs to be triggered if cursor.element.duration.ticks >= 960
+                                                //console.log("cursor.segment.next " + cursor.segment.next + "; cursor.tick " + cursor.tick) //+ "; endTick " + endTick)
                                                 var dashPosCenter
                                                 if (cursor.element.duration.ticks >= 960) {
                                                       if ((cursor.tick + cursor.element.duration.ticks) >= cursor.measure.lastSegment.tick) {
                                                             //this is the last note in this voice in this measure, so we base off right barline
-                                                            //((-cursor.segment.pos.x + cursor.measure.bbox.width - 0.5) / 2)
                                                             dashPosCenter = ((-cursor.segment.pos.x + cursor.measure.bbox.width - 1) / 2)
-                                                            /*var textTestA = newElement(Element.STAFF_TEXT);
-                                                            textTestA.pos.x = dashPosCenter
-                                                            textTestA.pos.y = yOff;
-                                                            textTestA.text = "$"; //<center> doesn't work in STAFF_TEXT
-                                                            //textTestA.text = textTestA.text + textTestA.pos.width
-                                                            cursor.add(textTestA);*/
                                                       }
                                                       else {
                                                             //there is at least one more note in this voice in this measure, so we 
@@ -249,11 +250,6 @@ MuseScore {
                                                             }
                                                             
                                                             dashPosCenter = (targetSeg.pos.x - cursor.segment.pos.x) / 2 ;
-                                                            /* var textTestB = newElement(Element.STAFF_TEXT);
-                                                            textTestB.pos.x = dashPosCenter;
-                                                            textTestB.pos.y = yOff;
-                                                            textTestB.text = "¥";
-                                                            cursor.add(textTestB); */
                                                       }
                                                 }
                                                 
@@ -287,21 +283,18 @@ MuseScore {
 //                 UNDERLINES on short notes (Eighth and shorter)
 //=============================================================================
                                                 // underlines for short notes (eighth and shorter)
-                                                else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360) // EIGHTH or DOTTED EIGHTH
+                                                else if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360 || cursor.element.duration.ticks==420) // EIGHTH or DOTTED EIGHTH
                                                 {     //2018-04-04 decided to revamp following feature; instead of underlining the jianpu number, we'll add an
                                                       //extra line. This way the underlines don't have to follow the width of the jianpu number exactly, since
                                                       //we've had issues getting it to line up with different spacing / font size.
-                                                      //text.text="<u> "+jpText+" </u>";
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                                       text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
                                                       text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
                                                       text1.text="<u>​   </u>"; // no-width space "​" plus four spaces 
                                                       cursor.add(text1);
                                                 }
-                                                else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180) // SIXTEENTH or DOTTED SIXTEENTH
+                                                else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180 || cursor.element.duration.ticks==210) // SIXTEENTH or DOTTED SIXTEENTH
                                                 {      
-                                                      //text.text="<u> "+jpText+" </u>"; // sixteenth
-                                                      //text.pos.x = -0.5 // * (graceChords.length - i);
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a DOUBLE-underline. 
                                                       text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
                                                       text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
@@ -314,10 +307,8 @@ MuseScore {
                                                       text2.text="<u>​   </u>"; // no-width space "​" plus 3 spaces 
                                                       cursor.add(text2);
                                                 }
-                                                else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90) // THIRTYSECONDTH or DOTTED THIRTYSECONDTH
+                                                else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90 || cursor.element.duration.ticks==105) // THIRTYSECONDTH or DOTTED THIRTYSECONDTH
                                                 {      
-                                                      //text.text="<u> "+jpText+" </u>"; 
-                                                      //text.pos.x = -0.5 ;
                                                       var text1 = newElement(Element.STAFF_TEXT); // we have to do a TRIPLE-underline. 
                                                       text1.pos.x = -0.3; //-2.5 * (graceChords.length - i);
                                                       text1.pos.y = yOffUnderline; // this is the position above the line for the jianpu underline (top)
@@ -336,21 +327,11 @@ MuseScore {
                                                       text3.text="<u>​   </u>"; // no-width space "​" plus 3 spaces
                                                       cursor.add(text3);
                                                 }
-//=============================================================================
-//                                DOTTED NOTES
-//=============================================================================
-                                                // alternatively, there is a property somewhere called note.dotCount which could be helpful
-                                                if (cursor.element.duration.ticks==720 || cursor.element.duration.ticks==360 || cursor.element.duration.ticks==180 || cursor.element.duration.ticks==90) // dotted QUARTER, EIGHTH, SIXTEENTH, or THIRTYSECONDTH
-                                                { // add dot only
-                                                      text.text+=" <font size=\"7\"/>•"; // dot in a smaller font
-                                                }
-                                                cursor.add(text);
 
 //=============================================================================
 //                           BEAMS (JIANPU UNDERLINE)
 //=============================================================================
 // this doesn't beam rests; rest to rest beaming shouldn't exist, but eighth note to eighth rest should be able to beam somehow... Later project.
-// 2018-01-23 tried using element.line to draw a line directly, but it seems like it isn't possible to draw lines from here.
 // 2018-01-23 added a no-width space to the beginning of each set of underlined spaces. On opening a file,
 // MuseScore won't recognize a stafftext which contains only standard space characters.
                                                 if (!!cursor.element.beam) { // current note contains a beam
@@ -366,7 +347,7 @@ MuseScore {
                                                             console.log("beam on current note, same beam as a previous note. Drawing beam back to previous note...")
                                                             var beamLength = cursor.element.pagePos.x - lastBeamX; //cursor.element.beam.bbox.width;
                                                             //console.log("beamLength " + beamLength)
-                                                            var jpbeamLength = (beamLength * 1.9).toFixed(0); //try x1.9 instead of x2.0 2018-04-04
+                                                            var jpbeamLength = (beamLength * 1.95).toFixed(0); //try x1.9 instead of x2.0 2018-04-04
                                                             // this seems messy 
                                                             // moving oneSpace to start so we can use it freely throughout
                                                             var moreSpaces = oneSpace.substring(1, jpbeamLength); 
@@ -475,36 +456,36 @@ MuseScore {
 //                         UPPER and LOWER OCTAVE DOTS
 //=============================================================================
                                                 // octave is an integer with the number of dots needed (-down, +up)
-                                                // check if needs DOWN octave dot
-                                                if (octave<0) { // could add ability for double dots below, however outside our current needs
-                                                      var text = newElement(Element.STAFF_TEXT);
-                                                      text.pos.x = 0.25; //(-2.5 * (graceChords.length - i))+.02; //DOT needs a slight right
-                                            	      text.pos.y =  yOff - underdotPositionSpinBox.value; // this is the position above the line for the jianpu UNDER DOT
-                                                      if (cursor.element.duration.ticks==240 || cursor.element.duration.ticks==360)
-                                                      {
-                                                            text.pos.y =  yOff + underlineSpacing - underdotPositionSpinBox.value; // the underdot for 8ths is lower
-                                                      }
-                                                      else if (cursor.element.duration.ticks==120 || cursor.element.duration.ticks==180)
-                                                      {
-                                                            text.pos.y =  yOff + (underlineSpacing * 2) - underdotPositionSpinBox.value; // the underdot for 16ths is lower
-                                                      }
-                                                      else if (cursor.element.duration.ticks==60 || cursor.element.duration.ticks==90)
-                                                      {
-                                                            text.pos.y =  yOff + (underlineSpacing * 3) - underdotPositionSpinBox.value; // the underdot for 32ndths is lower yet
-                                                      }
-                                                      text.text = "<font size=\"7\"/>•";
-                                                      cursor.add(text);
-                                                }
-                                                // check if needs UP octave dot
-                                                if (octave>0) { // likewise could add ability for double dots above, however also outside our current needs
+                                                var o = octave
+                                                for (; o < 0; o++)
+                                                {
                                                       var text = newElement(Element.STAFF_TEXT);
                                                       text.pos.x = 0.25; // DOT needs a slight right
-                                                      text.pos.y =  yOff - 0.8; // this is the position above the line for the jianpu OVER DOT
+                                                      text.pos.y =  yOff - underdotPositionSpinBox.value - (o * 0.5); // this is the position above the line for the jianpu OVER DOT
+                                                      if (cursor.element.duration.ticks>=240 && cursor.element.duration.ticks<=420)
+                                                      {
+                                                            text.pos.y =  text.pos.y + (underlineSpacing * 1) - 0.1; // the underdot for 8ths is lower
+                                                      }
+                                                      else if (cursor.element.duration.ticks>=120 && cursor.element.duration.ticks<=210)
+                                                      {
+                                                            text.pos.y =  text.pos.y + (underlineSpacing * 2) - 0.1; // the underdot for 16ths is lower
+                                                      }
+                                                      else if (cursor.element.duration.ticks>=60 && cursor.element.duration.ticks<=105)
+                                                      {
+                                                            text.pos.y =  text.pos.y + (underlineSpacing * 3) - 0.1; // the underdot for 32ndths is lower yet
+                                                      }
                                                       text.text = "<font size=\"7\"/>•";//</font>
                                                       cursor.add(text);
                                                 }
-                                                //console.log(cursor.element.BarLine)
-
+                                                for (; o > 0; o--)
+                                                {
+                                                      var text = newElement(Element.STAFF_TEXT);
+                                                      text.pos.x = 0.25; // DOT needs a slight right
+                                                      text.pos.y =  yOff - 0.3 - (o * 0.5); // this is the position above the line for the jianpu OVER DOT
+                                                      text.text = "<font size=\"7\"/>•";//</font>
+                                                      cursor.add(text);
+                                                }
+                                                
 //=============================================================================
 //                            TIES (development)
 //=============================================================================
