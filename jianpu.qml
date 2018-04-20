@@ -206,10 +206,13 @@ MuseScore {
 //=============================================================================
 //                                DOTTED NOTES
 //=============================================================================
-                                                var dots = note.dotsCount
-                                                for (; dots > 0; dots--)
+                                                if (cursor.element.duration.ticks < 960) //we don't want to add dots to longer notes
                                                 {
-                                                      text0.text+=" <font size=\"7\"/>•"; // dot in a smaller font
+                                                      var dots = note.dotsCount
+                                                      for (; dots > 0; dots--)
+                                                      {
+                                                            text0.text+=" <font size=\"7\"/>•"; // dot in a smaller font
+                                                      }
                                                 }
                                                 cursor.add(text0); //finish main jianpu drawing
 //=============================================================================
